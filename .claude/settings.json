@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell -Command \"& { $paths = $env:PATH -split '';''; foreach \\($p in $paths\\) { if \\(Test-Path \\(Join-Path $p ''iverilog.exe''\\)\\) { Write-Output \\(Join-Path $p ''iverilog.exe''\\) } } }\")"
+    ]
+  }
+}

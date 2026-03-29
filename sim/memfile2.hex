@@ -1,0 +1,168 @@
+// Comprehensive RV32I test program — covers all instruction types + explicit hazards.
+// Run simulation from sim/ directory so $readmemh("memfile2.hex") resolves here.
+//
+// ── Setup ────────────────────────────────────────────────────────────────────
+// 0x00  00100093  addi  x1,  x0,  1          x1  = 1
+// 0x04  FFF00113  addi  x2,  x0, -1          x2  = 0xFFFFFFFF
+// 0x08  123451B7  lui   x3,  0x12345         x3  = 0x12345000
+// 0x0C  00001217  auipc x4,  1               x4  = PC(0x0C) + 0x1000 = 0x100C
+//
+// ── R-type ───────────────────────────────────────────────────────────────────
+// 0x10  002082B3  add   x5,  x1, x2          x5  = 0       (1 + 0xFFFFFFFF wraps)
+// 0x14  40110333  sub   x6,  x2, x1          x6  = 0xFFFFFFFE  (-2)
+// 0x18  001173B3  and   x7,  x2, x1          x7  = 1
+// 0x1C  00116433  or    x8,  x2, x1          x8  = 0xFFFFFFFF
+// 0x20  001144B3  xor   x9,  x2, x1          x9  = 0xFFFFFFFE
+// 0x24  00109533  sll   x10, x1, x1          x10 = 2       (1 << 1)
+// 0x28  001155B3  srl   x11, x2, x1          x11 = 0x7FFFFFFF
+// 0x2C  40115633  sra   x12, x2, x1          x12 = 0xFFFFFFFF  (-1 >>s 1 = -1)
+// 0x30  001126B3  slt   x13, x2, x1          x13 = 1       (-1 <s 1)
+// 0x34  0020B733  sltu  x14, x1, x2          x14 = 1       (1 <u 0xFFFFFFFF)
+//
+// ── I-type arithmetic ────────────────────────────────────────────────────────
+// 0x38  06400793  addi  x15, x0,  100        x15 = 100  (= 0x64)
+// 0x3C  00F7F813  andi  x16, x15, 0x0F       x16 = 4   (0x64 & 0x0F)
+// 0x40  0807E893  ori   x17, x15, 0x80       x17 = 228 (0x64 | 0x80 = 0xE4)
+// 0x44  00F7C913  xori  x18, x15, 0x0F       x18 = 107 (0x64 ^ 0x0F = 0x6B)
+// 0x48  00409993  slli  x19, x1,  4          x19 = 16
+// 0x4C  01C15A13  srli  x20, x2,  28         x20 = 15  (0xFFFFFFFF >> 28 = 0xF)
+// 0x50  40415A93  srai  x21, x2,  4          x21 = 0xFFFFFFFF  (-1 >>s 4 = -1)
+// 0x54  00012B13  slti  x22, x2,  0          x22 = 1   (-1 <s 0)
+// 0x58  0020BB93  sltiu x23, x1,  2          x23 = 1   (1 <u 2)
+//
+// ── Store / Load ─────────────────────────────────────────────────────────────
+// 0x5C  00302023  sw    x3,  0(x0)           mem[0] = 0x12345000
+// 0x60  00F02223  sw    x15, 4(x0)           mem[4] = 100
+// 0x64  00002C03  lw    x24, 0(x0)           x24 = 0x12345000
+// 0x68  00402C83  lw    x25, 4(x0)           x25 = 100  (gap between lw x24 and beq x24)
+//
+// ── Branches (all six, all taken; x26=99 instructions are squashed) ──────────
+// 0x6C  003C0463  beq   x24, x3,  +8         TAKEN  (MEM/WB→EX fwd for x24)
+// 0x70  06300D13  addi  x26, x0,  99         SKIPPED
+// 0x74  00209463  bne   x1,  x2,  +8         TAKEN  (1 != -1)
+// 0x78  06300D13  addi  x26, x0,  99         SKIPPED
+// 0x7C  00114463  blt   x2,  x1,  +8         TAKEN  (-1 <s 1)
+// 0x80  06300D13  addi  x26, x0,  99         SKIPPED
+// 0x84  0020D463  bge   x1,  x2,  +8         TAKEN  (1 >=s -1)
+// 0x88  06300D13  addi  x26, x0,  99         SKIPPED
+// 0x8C  0020E463  bltu  x1,  x2,  +8         TAKEN  (1 <u 0xFFFFFFFF)
+// 0x90  06300D13  addi  x26, x0,  99         SKIPPED
+// 0x94  00117463  bgeu  x2,  x1,  +8         TAKEN  (0xFFFFFFFF >=u 1)
+// 0x98  06300D13  addi  x26, x0,  99         SKIPPED
+// 0x9C  00000D13  addi  x26, x0,  0          x26 = 0 (none of the 99s ran)
+//
+// ── JAL ──────────────────────────────────────────────────────────────────────
+// 0xA0  01000DEF  jal   x27, +16             x27 = 0xA4, PC → 0xB0 (flush 0xA4,0xA8)
+// 0xA4  06300E13  addi  x28, x0,  99         SKIPPED
+// 0xA8  06300E13  addi  x28, x0,  99         SKIPPED
+// 0xAC  00000013  nop                        unreachable
+//
+// ── JALR ─────────────────────────────────────────────────────────────────────
+// 0xB0  0C000F13  addi  x30, x0,  0xC0       x30 = 0xC0 = 192
+// 0xB4  000F0EE7  jalr  x29, x30, 0          x29 = 0xB8, PC → 0xC0 (flush 0xB8,0xBC)
+// 0xB8  06300E13  addi  x28, x0,  99         SKIPPED
+// 0xBC  06300E13  addi  x28, x0,  99         SKIPPED
+//
+// ── Not-taken branch check ───────────────────────────────────────────────────
+// 0xC0  03700E13  addi  x28, x0,  55         x28 = 55
+// 0xC4  00208463  beq   x1,  x2,  +8         NOT TAKEN (1 != -1), fall through
+// 0xC8  001D0D13  addi  x26, x26, 1          x26 = 1  (proves fall-through)
+//
+// ── Explicit Hazard Tests ─────────────────────────────────────────────────────
+//
+// Test 1: EX/MEM→EX forwarding (ForwardAE = ForwardBE = 2'b10)
+//   Producer immediately followed by consumer — no gap instruction.
+//   Without forwarding: x31 would read stale (uninit) value.
+//   With EX/MEM→EX fwd: x31 = 10 is forwarded → add computes 10+10 = 20.
+// 0xCC  00A00F93  addi  x31, x0, 10          x31 = 10  (producer)
+// 0xD0  01FF8FB3  add   x31, x31, x31        x31 = 20  (EX/MEM→EX fwd both A & B)
+//
+// Test 2: MEM/WB→EX forwarding (ForwardAE = ForwardBE = 2'b01)
+//   Producer, then one gap instruction (nop), then consumer.
+//   Without forwarding: x31 would use stale value.
+//   With MEM/WB→EX fwd: x31 = 5 is forwarded → add computes 5+5 = 10.
+// 0xD4  00500F93  addi  x31, x0, 5           x31 = 5   (producer)
+// 0xD8  00000013  nop                         gap (addi in MEM stage)
+// 0xDC  01FF8FB3  add   x31, x31, x31        x31 = 10  (MEM/WB→EX fwd both A & B)
+//
+// Test 3: Load-use stall (1-cycle stall + MEM/WB→EX forwarding)
+//   lw x31 immediately followed by add x31 — hazard unit must:
+//     StallF=1, StallD=1 (hold PC and IF/ID), FlushE=1 (insert NOP bubble).
+//   After stall: x31 from lw is in MEM/WB → forwarded to EX.
+//   Result: x31 = 10 + 10 = 20.
+// 0xE0  01F02023  sw    x31, 0(x0)           mem[0] = 10  (setup for lw)
+// 0xE4  00002F83  lw    x31, 0(x0)           x31 = 10  (load; triggers stall)
+// 0xE8  01FF8FB3  add   x31, x31, x31        x31 = 20  (1-cycle stall + MEM/WB fwd)
+//
+// ── Halt ─────────────────────────────────────────────────────────────────────
+// 0xEC  0000006F  jal   x0,  0               infinite loop (PC cycles 0xEC→0xF0→0xF4→0xEC)
+//
+// Expected register file at end:
+//   x1=0x00000001  x2=0xFFFFFFFF  x3=0x12345000  x4=0x0000100C
+//   x5=0x00000000  x6=0xFFFFFFFE  x7=0x00000001  x8=0xFFFFFFFF
+//   x9=0xFFFFFFFE  x10=0x00000002 x11=0x7FFFFFFF  x12=0xFFFFFFFF
+//   x13=0x00000001 x14=0x00000001 x15=0x00000064  x16=0x00000004
+//   x17=0x000000E4 x18=0x0000006B x19=0x00000010  x20=0x0000000F
+//   x21=0xFFFFFFFF x22=0x00000001 x23=0x00000001  x24=0x12345000
+//   x25=0x00000064 x26=0x00000001 x27=0x000000A4  x28=0x00000037
+//   x29=0x000000B8 x30=0x000000C0 x31=0x00000014
+00100093
+FFF00113
+123451B7
+00001217
+002082B3
+40110333
+001173B3
+00116433
+001144B3
+00109533
+001155B3
+40115633
+001126B3
+0020B733
+06400793
+00F7F813
+0807E893
+00F7C913
+00409993
+01C15A13
+40415A93
+00012B13
+0020BB93
+00302023
+00F02223
+00002C03
+00402C83
+003C0463
+06300D13
+00209463
+06300D13
+00114463
+06300D13
+0020D463
+06300D13
+0020E463
+06300D13
+00117463
+06300D13
+00000D13
+01000DEF
+06300E13
+06300E13
+00000013
+0C000F13
+000F0EE7
+06300E13
+06300E13
+03700E13
+00208463
+001D0D13
+00A00F93
+01FF8FB3
+00500F93
+00000013
+01FF8FB3
+01F02023
+00002F83
+01FF8FB3
+0000006F

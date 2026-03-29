@@ -1,0 +1,21 @@
+# Simulation outputs
+build/
+waves/
+
+# Vivado / Quartus generated
+*.bit
+*.bin
+*.log
+*.jou
+*.str
+*.xpr
+*.cache/
+*.hw/
+*.ip_user_files/
+*.runs/
+*.sim/
+*.srcs/
+
+# OS
+.DS_Store
+Thumbs.db

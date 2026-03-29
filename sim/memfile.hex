@@ -1,0 +1,36 @@
+// Test program for tb_riscv_top / tb_if_stage / tb_id_stage
+// Run simulation from sim/ so the relative path "memfile.hex" resolves here.
+//
+// Addr  Hex          Assembly             Expected result
+// 0x00  00500093     addi x1,  x0, 5     x1  = 5
+// 0x04  00300113     addi x2,  x0, 3     x2  = 3
+// 0x08  002081B3     add  x3,  x1, x2    x3  = 8
+// 0x0C  40208233     sub  x4,  x1, x2    x4  = 2
+// 0x10  0020F2B3     and  x5,  x1, x2    x5  = 1
+// 0x14  0020E333     or   x6,  x1, x2    x6  = 7
+// 0x18  0020C3B3     xor  x7,  x1, x2    x7  = 6
+// 0x1C  00302023     sw   x3,  0(x0)     mem[0]=8
+// 0x20  00002403     lw   x8,  0(x0)     x8  = 8  (load-use hazard)
+// 0x24  00340463     beq  x8,  x3, 8     taken -> 0x2C  (2-cycle flush)
+// 0x28  06300493     addi x9,  x0, 99    SKIPPED
+// 0x2C  00100513     addi x10, x0, 1     x10 = 1
+// 0x30  008005EF     jal  x11, 8         x11=0x34, jump -> 0x38  (2-cycle flush)
+// 0x34  0C800613     addi x12, x0, 200   SKIPPED
+// 0x38  02A00693     addi x13, x0, 42    x13 = 42
+// 0x3C  0000006F     jal  x0,  0         halt (infinite loop)
+00500093
+00300113
+002081B3
+40208233
+0020F2B3
+0020E333
+0020C3B3
+00302023
+00002403
+00340463
+06300493
+00100513
+008005EF
+0C800613
+02A00693
+0000006F
