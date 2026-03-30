@@ -4,7 +4,7 @@
 // Coverage  : control signal decode for representative instructions;
 //             register file read (two ports); immediate extension;
 //             write-back path (reg_write_w, rd_w, result_w);
-//             x0 read always returns 0; rstn resets reads to 0
+//             x0 read always returns 0
 // =============================================================================
 `timescale 1ns/1ps
 module tb_id_stage;
@@ -12,7 +12,7 @@ module tb_id_stage;
     // -------------------------------------------------------------------------
     // DUT signals
     // -------------------------------------------------------------------------
-    reg        clk, rstn;
+    reg        clk;
     reg        reg_write_w;
     reg [4:0]  rd_w;
     reg [31:0] result_w, instr_d;
@@ -26,7 +26,6 @@ module tb_id_stage;
 
     id_stage uut (
         .clk         (clk),
-        .rstn        (rstn),
         .RegWriteW   (reg_write_w),
         .RdW         (rd_w),
         .ResultW     (result_w),
@@ -93,15 +92,9 @@ module tb_id_stage;
         $dumpvars(0, tb_id_stage);
         $display("=== tb_id_stage ===");
 
-        rstn = 0; reg_write_w = 0; rd_w = 5'd0; result_w = 32'h0;
+        reg_write_w = 0; rd_w = 5'd0; result_w = 32'h0;
         instr_d = 32'h00000013;   // NOP: addi x0, x0, 0
         #3;
-
-        // Reset: reads return 0
-        chk32(read_data_1_d, 32'h0, "rstn=0: rd1=0");
-        chk32(read_data_2_d, 32'h0, "rstn=0: rd2=0");
-
-        @(negedge clk); rstn = 1;
 
         // ---------------------------------------------------------------
         // Write registers via WB path, then decode instructions that read them

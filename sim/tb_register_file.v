@@ -10,14 +10,13 @@ module tb_register_file;
     // -------------------------------------------------------------------------
     // DUT signals
     // -------------------------------------------------------------------------
-    reg        clk, rstn, write_en_3;
+    reg        clk, write_en_3;
     reg  [4:0] addr_1, addr_2, addr_3;
     reg [31:0] write_data_3;
     wire[31:0] read_data_1, read_data_2;
 
     register_file uut (
         .clk (clk),
-        .rstn(rstn),
         .WE3 (write_en_3),
         .A1  (addr_1),
         .A2  (addr_2),
@@ -58,16 +57,10 @@ module tb_register_file;
         $dumpvars(0, tb_register_file);
         $display("=== tb_register_file ===");
 
-        // Reset active: all reads must return 0
-        rstn = 0; write_en_3 = 0;
+        write_en_3 = 0;
         addr_1 = 5'd1; addr_2 = 5'd2;
         addr_3 = 5'd0; write_data_3 = 32'hDEADBEEF;
         #3;
-        chk(read_data_1, 32'h0, "rstn=0: rd1 forced 0");
-        chk(read_data_2, 32'h0, "rstn=0: rd2 forced 0");
-
-        // Deassert reset
-        @(negedge clk); rstn = 1;
 
         // --- x0 hardwired to 0 ---
         addr_1 = 5'd0; addr_2 = 5'd0;
@@ -113,11 +106,6 @@ module tb_register_file;
         write_en_3 = 0;
         addr_2 = 5'd31; #1;
         chk(read_data_2, 32'hCAFEBABE, "x31=0xCAFEBABE (boundary)");
-
-        // --- rstn=0 again overrides combinational read ---
-        rstn = 0; #1;
-        chk(read_data_2, 32'h0, "rstn=0: rd2 forced 0 (after write)");
-        rstn = 1;
 
         $display("--- register_file: %0d passed, %0d failed ---", pass, fail);
         $finish;
