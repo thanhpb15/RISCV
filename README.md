@@ -1,5 +1,7 @@
 # RV32I 5-Stage Pipelined Processor
 
+Copyright 2026 Pham Bao Thanh — Licensed under the [Apache License, Version 2.0](LICENSE)
+
 A synthesizable, fully-verified implementation of a RISC-V RV32I 5-stage in-order pipeline in Verilog.
 Built for the Computer Architecture course at HUST (Hanoi University of Science and Technology).
 
@@ -58,7 +60,7 @@ PROJECT/
 │   ├── main_decoder.v        # Opcode → control signals
 │   ├── alu_decoder.v         # funct3/funct7 → ALU operation
 │   ├── alu.v                 # 32-bit ALU
-│   ├── register_file.v       # 32×32 register file with write-through bypass
+│   ├── register_file.v       # 32×32 register file, write-through bypass, x0 hardwired 0
 │   ├── imm_extend.v          # Immediate sign-extension (all RV32I types)
 │   ├── instruction_memory.v  # ROM (initialised from sim/memfile.hex)
 │   ├── data_memory.v         # Single-port RAM

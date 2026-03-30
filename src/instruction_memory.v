@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 Pham Bao Thanh
 // =============================================================================
 // Module  : instruction_memory (IMEM)
 // Description: Read-only instruction memory, 1024 x 32-bit words (4 KB).

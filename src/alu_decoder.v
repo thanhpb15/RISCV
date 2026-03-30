@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 Pham Bao Thanh
 // =============================================================================
 // Module  : alu_decoder
 // Description: Decodes (ALUOp, Funct3, Funct7, Op) into a 4-bit ALUControl.

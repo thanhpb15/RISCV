@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 Pham Bao Thanh
 // =============================================================================
 // Module  : adder
 // Description: 32-bit combinational adder

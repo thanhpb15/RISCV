@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 Pham Bao Thanh
 // =============================================================================
 // Module  : ex_stage  (Execute)
 // Description: EX pipeline stage. Performs the ALU operation, resolves

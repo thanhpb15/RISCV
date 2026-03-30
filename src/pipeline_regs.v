@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 Pham Bao Thanh
 // =============================================================================
 // File    : pipeline_regs.v
 // Description: All four pipeline inter-stage registers for the 5-stage

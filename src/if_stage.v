@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 Pham Bao Thanh
 // =============================================================================
 // Module  : if_stage  (Instruction Fetch)
 // Description: IF pipeline stage. Reads the next instruction from IMEM,

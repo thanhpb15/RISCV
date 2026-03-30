@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 Pham Bao Thanh
 // =============================================================================
 // Module  : main_decoder
 // Description: Primary instruction decoder. Maps opcode to pipeline control

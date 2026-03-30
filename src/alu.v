@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 Pham Bao Thanh
 // =============================================================================
 // Module  : alu (Arithmetic Logic Unit)
 // Description: 32-bit ALU supporting all RV32I arithmetic and logic operations.

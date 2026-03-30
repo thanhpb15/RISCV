@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 Pham Bao Thanh
 // =============================================================================
 // Module  : control_unit
 // Description: Pipeline control unit — composes main_decoder + alu_decoder.

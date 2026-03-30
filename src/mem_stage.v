@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 Pham Bao Thanh
 // =============================================================================
 // Module  : mem_stage  (Memory Access)
 // Description: MEM pipeline stage. Performs data memory reads and writes.

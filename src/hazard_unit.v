@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 Pham Bao Thanh
 // =============================================================================
 // Module  : hazard_unit
 // Description: Detects and resolves all three hazard types in the 5-stage

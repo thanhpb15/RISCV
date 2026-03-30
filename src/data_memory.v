@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 Pham Bao Thanh
 // =============================================================================
 // Module  : data_memory (DMEM)
 // Description: Read/write data memory, 1024 x 32-bit words (4 KB).

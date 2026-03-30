@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 Pham Bao Thanh
 // =============================================================================
 // Module  : wb_stage  (Write Back)
 // Description: WB pipeline stage. Selects the value to write back into the

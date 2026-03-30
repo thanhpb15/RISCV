@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 Pham Bao Thanh
 // =============================================================================
 // Module  : imm_extend
 // Description: Immediate sign-extender. Extracts and sign-extends the immediate

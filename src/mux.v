@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 Pham Bao Thanh
 // =============================================================================
 // Module  : mux (2-to-1) and mux_3_1 (3-to-1)
 // Description: 32-bit combinational multiplexers

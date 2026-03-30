@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 Pham Bao Thanh
 // =============================================================================
 // Module  : id_stage  (Instruction Decode)
 // Description: ID pipeline stage. Decodes the instruction, reads source
@@ -18,7 +20,6 @@
 // =============================================================================
 module id_stage (
     input  wire        clk,
-    input  wire        rstn,
     // Write-back interface (from WB stage, fed back into register file)
     input  wire        RegWriteW,
     input  wire [4:0]  RdW,
@@ -74,7 +75,6 @@ module id_stage (
     // Register file: two asynchronous read ports, one synchronous write port
     register_file rf (
         .clk (clk),
-        .rstn(rstn),
         .WE3 (RegWriteW),
         .A1  (InstrD[19:15]),
         .A2  (InstrD[24:20]),

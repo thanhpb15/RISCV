@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 Pham Bao Thanh
 // =============================================================================
 // Module  : pc (Program Counter Register)
 // Description: 32-bit synchronous register holding the current PC value.

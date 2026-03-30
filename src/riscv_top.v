@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 Pham Bao Thanh
 // =============================================================================
 // Module  : riscv_top  (Top-level)
 // Description: RV32I 5-stage pipelined processor with full hazard handling.
@@ -128,7 +130,6 @@ module riscv_top (
     // =========================================================================
     id_stage u_id_stage (
         .clk          (clk),
-        .rstn         (rstn),
         .RegWriteW    (RegWriteW),
         .RdW          (RdW),
         .ResultW      (ResultW),
