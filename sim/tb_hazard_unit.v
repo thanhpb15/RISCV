@@ -1,9 +1,9 @@
 // =============================================================================
 // Testbench : tb_hazard_unit
 // DUT       : hazard_unit (src/hazard_unit.v)
-// Coverage  : reset; no-hazard baseline; EX/MEM→EX forwarding (forward_a/b=10);
+// Coverage  : no-hazard baseline; EX/MEM→EX forwarding (forward_a/b=10);
 //             MEM/WB→EX forwarding (forward_a/b=01); EX/MEM priority over MEM/WB;
-//             x0 never forwarded; load-use stall; control flush; stall+flush combo
+//             x0 never forwarded; load-use stall (lwStall); control flush; stall+flush combo
 // =============================================================================
 `timescale 1ns/1ps
 module tb_hazard_unit;
@@ -11,16 +11,13 @@ module tb_hazard_unit;
     // -------------------------------------------------------------------------
     // DUT signals
     // -------------------------------------------------------------------------
-    reg        rstn;
-    reg        reg_write_m, reg_write_w, pc_src_e;
+    reg        reg_write_m, reg_write_w, pc_src_e, result_src_e;
     reg  [4:0] rd_m, rd_w, rs1_e, rs2_e, rd_e, rs1_d, rs2_d;
-    reg  [1:0] result_src_e;
 
     wire [1:0] forward_a_e, forward_b_e;
     wire       stall_f, stall_d, flush_e, flush_d;
 
     hazard_unit uut (
-        .rstn       (rstn),
         .RegWriteM  (reg_write_m),
         .RegWriteW  (reg_write_w),
         .PCSrcE     (pc_src_e),
@@ -79,12 +76,10 @@ module tb_hazard_unit;
     // Default: no hazards
     task automatic set_defaults;
         begin
-            rstn = 1;
-            reg_write_m = 0; reg_write_w = 0; pc_src_e = 0;
+            reg_write_m = 0; reg_write_w = 0; pc_src_e = 0; result_src_e = 0;
             rd_m = 5'd0; rd_w = 5'd0;
             rs1_e = 5'd0; rs2_e = 5'd0;
             rd_e = 5'd0; rs1_d = 5'd0; rs2_d = 5'd0;
-            result_src_e = 2'b00;
         end
     endtask
 
@@ -95,20 +90,6 @@ module tb_hazard_unit;
         $dumpfile("tb_hazard_unit.vcd");
         $dumpvars(0, tb_hazard_unit);
         $display("=== tb_hazard_unit ===");
-
-        // --- Reset: forwarding outputs forced 0 ---
-        // Use benign inputs (no hazard conditions) to isolate the rstn effect.
-        // The hazard unit gates forward_a/b by rstn; stall/flush are purely
-        // combinational and are not suppressed by rstn — that is correct behaviour.
-        rstn = 0;
-        reg_write_m = 1; rd_m = 5'd1; rs1_e = 5'd1;
-        reg_write_w = 1; rd_w = 5'd2; rs2_e = 5'd2;
-        pc_src_e = 0;                       // no branch redirect
-        result_src_e = 2'b00;               // not a load → no stall
-        rd_e = 5'd0; rs1_d = 5'd0; rs2_d = 5'd0;
-        #1;
-        chk_fwd(forward_a_e,2'b00, forward_b_e,2'b00, "rstn=0: fwd forced 0");
-        chk_ctrl(stall_f,0, stall_d,0, flush_e,0, flush_d,0, "rstn=0: no stall/flush");
 
         // --- No hazard baseline ---
         set_defaults(); #1;
@@ -151,7 +132,7 @@ module tb_hazard_unit;
         rs1_e = 5'd7; #1;
         chk_fwd(forward_a_e,2'b10, forward_b_e,2'b00, "priority: EX/MEM over MEM/WB");
 
-        // --- x0 is never forwarded ---
+        // --- x0 is never forwarded (Rs1E=0 / Rs2E=0 fails the != 0 check) ---
         set_defaults();
         reg_write_m = 1; rd_m = 5'd0; rs1_e = 5'd0;
         reg_write_w = 1; rd_w = 5'd0; rs2_e = 5'd0; #1;
@@ -166,25 +147,25 @@ module tb_hazard_unit;
         reg_write_w = 0; rd_w = 5'd1; rs1_e = 5'd1; #1;
         chk_fwd(forward_a_e,2'b00, forward_b_e,2'b00, "reg_write_w=0: no fwd");
 
-        // --- Load-use hazard: stall + flush_e ---
-        // EX is LOAD (result_src_e=01), rd_e=x1 matches rs1_d=x1
+        // --- Load-use hazard (lwStall): stall + flush_e ---
+        // result_src_e=1 (load in EX), rd_e=x1 matches rs1_d=x1
         set_defaults();
-        result_src_e = 2'b01; rd_e = 5'd1; rs1_d = 5'd1; #1;
+        result_src_e = 1; rd_e = 5'd1; rs1_d = 5'd1; #1;
         chk_ctrl(stall_f,1, stall_d,1, flush_e,1, flush_d,0, "load-use rs1: stall+flush_e");
 
         // rd_e matches rs2_d
         set_defaults();
-        result_src_e = 2'b01; rd_e = 5'd2; rs2_d = 5'd2; #1;
+        result_src_e = 1; rd_e = 5'd2; rs2_d = 5'd2; #1;
         chk_ctrl(stall_f,1, stall_d,1, flush_e,1, flush_d,0, "load-use rs2: stall+flush_e");
 
-        // rd_e=x0 → no stall (x0 never causes load-use)
+        // rd_e=x0 → no stall (load to x0 has no consumer)
         set_defaults();
-        result_src_e = 2'b01; rd_e = 5'd0; rs1_d = 5'd0; rs2_d = 5'd0; #1;
+        result_src_e = 1; rd_e = 5'd0; rs1_d = 5'd0; #1;
         chk_ctrl(stall_f,0, stall_d,0, flush_e,0, flush_d,0, "load-use x0: no stall");
 
-        // result_src_e != 01 → no stall (not a load)
+        // result_src_e=0 → not a load, no stall
         set_defaults();
-        result_src_e = 2'b00; rd_e = 5'd1; rs1_d = 5'd1; #1;
+        result_src_e = 0; rd_e = 5'd1; rs1_d = 5'd1; #1;
         chk_ctrl(stall_f,0, stall_d,0, flush_e,0, flush_d,0, "non-load: no stall");
 
         // --- Control flush: flush_d + flush_e ---
@@ -195,7 +176,7 @@ module tb_hazard_unit;
         // --- Simultaneous load-use stall AND control flush ---
         // (edge case: load followed immediately by a branch that is taken)
         set_defaults();
-        result_src_e = 2'b01; rd_e = 5'd3; rs1_d = 5'd3;
+        result_src_e = 1; rd_e = 5'd3; rs1_d = 5'd3;
         pc_src_e = 1; #1;
         chk_ctrl(stall_f,1, stall_d,1, flush_e,1, flush_d,1,
                  "load-use + branch: all asserted");

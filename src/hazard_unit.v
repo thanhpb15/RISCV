@@ -28,7 +28,6 @@
 //    Penalty: 2 cycles (2 instructions must be squashed).
 // =============================================================================
 module hazard_unit (
-    input  wire        rstn,
     // Stage pipeline signals
     input  wire        RegWriteM,   // MEM stage: does instruction write rd?
     input  wire        RegWriteW,   // WB  stage: does instruction write rd?
@@ -40,7 +39,7 @@ module hazard_unit (
     input  wire [4:0]  RdE,         // rd  of instruction in EX (load-use check)
     input  wire [4:0]  Rs1D,        // rs1 of instruction in ID (load-use check)
     input  wire [4:0]  Rs2D,        // rs2 of instruction in ID
-    input  wire [1:0]  ResultSrcE,  // 2'b01 -> EX instruction is a LOAD
+    input  wire        ResultSrcE,  // 1 = load instruction in EX (ResultSrc[0])
     // Forwarding control
     output wire [1:0]  ForwardAE,   // ALU A-input source select
     output wire [1:0]  ForwardBE,   // ALU B-input source select
@@ -51,45 +50,40 @@ module hazard_unit (
     output wire        FlushD       // 1 -> clear IF/ID register
 );
     // -------------------------------------------------------------------------
-    // Forwarding logic
-    // Condition checklist:
-    //   (a) The producing instruction writes to rd (RegWrite = 1)
-    //   (b) rd is not x0 (x0 is hardwired 0, never forwarded)
-    //   (c) rd matches the consuming instruction's source register
-    //   EX/MEM (MEM stage) has higher priority than MEM/WB (WB stage)
+    // Forwarding logic (per spec: check consumer Rs1E/Rs2E != x0)
+    //   (a) rs1E/rs2E != x0  — x0 is hardwired 0, never needs forwarding
+    //   (b) rd of producer matches rs1E or rs2E
+    //   (c) producer writes to rd (RegWrite = 1)
+    //   Priority: EX/MEM (MEM stage) > MEM/WB (WB stage)
     // -------------------------------------------------------------------------
     assign ForwardAE =
-        (!rstn)                                                  ? 2'b00 :
-        (RegWriteM && (RdM != 5'b0) && (RdM == Rs1E))  ? 2'b10 : // forward from MEM
-        (RegWriteW && (RdW != 5'b0) && (RdW == Rs1E))  ? 2'b01 : // forward from WB
-                                                           2'b00;  // no forward
+        ((Rs1E != 5'b0) && (Rs1E == RdM) && RegWriteM) ? 2'b10 : // EX/MEM → EX
+        ((Rs1E != 5'b0) && (Rs1E == RdW) && RegWriteW) ? 2'b01 : // MEM/WB → EX
+                                                          2'b00;  // no forward
 
     assign ForwardBE =
-        (!rstn)                                                  ? 2'b00 :
-        (RegWriteM && (RdM != 5'b0) && (RdM == Rs2E))  ? 2'b10 :
-        (RegWriteW && (RdW != 5'b0) && (RdW == Rs2E))  ? 2'b01 :
-                                                           2'b00;
+        ((Rs2E != 5'b0) && (Rs2E == RdM) && RegWriteM) ? 2'b10 :
+        ((Rs2E != 5'b0) && (Rs2E == RdW) && RegWriteW) ? 2'b01 :
+                                                          2'b00;
 
     // -------------------------------------------------------------------------
-    // Load-use hazard detection
-    // The load result is not available until the end of the MEM stage.
-    // If the next instruction needs that value at the start of EX, one stall
-    // cycle must be inserted and the result is then forwarded from MEM/WB.
+    // Load-use hazard (lwStall)
+    // A load result is not available until end of MEM; one stall cycle is
+    // inserted so the result can be forwarded from MEM/WB to EX next cycle.
+    // RdE != x0: a load to x0 is a no-op — no consumer can depend on it.
     // -------------------------------------------------------------------------
-    wire LoadUseHazard;
-    assign LoadUseHazard = (ResultSrcE == 2'b01) &&   // EX instruction is LOAD
-                           (RdE != 5'b0)          &&   // rd is not x0
-                           ((RdE == Rs1D) || (RdE == Rs2D));
+    wire lwStall;
+    assign lwStall = ResultSrcE && (RdE != 5'b0) &&
+                     ((RdE == Rs1D) || (RdE == Rs2D));
 
-    assign StallF = LoadUseHazard;   // freeze PC
-    assign StallD = LoadUseHazard;   // freeze IF/ID register
+    assign StallF = lwStall;
+    assign StallD = lwStall;
 
     // -------------------------------------------------------------------------
     // Flush control
-    // FlushE covers both: NOP bubble insertion (load-use stall) and
-    //                     squashing the wrong instruction (branch/jump).
-    // FlushD squashes the instruction that has just been fetched (wrong path).
+    // FlushE: NOP bubble on load-use stall OR squash wrong-path instruction.
+    // FlushD: squash the instruction already fetched into ID on branch/jump.
     // -------------------------------------------------------------------------
-    assign FlushD = PCSrcE;                      // squash instruction in ID
-    assign FlushE = LoadUseHazard | PCSrcE;      // NOP bubble or squash ID/EX
+    assign FlushD = PCSrcE;
+    assign FlushE = lwStall | PCSrcE;
 endmodule
