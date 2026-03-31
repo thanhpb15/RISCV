@@ -289,9 +289,9 @@ module riscv_top (
 
     // =========================================================================
     // Hazard Unit — Forwarding / Stall / Flush control
+    // ResultSrcE[0]: 1 when the instruction in EX is a load (ResultSrc == 2'b01)
     // =========================================================================
     hazard_unit u_hazard (
-        .rstn         (rstn),
         .RegWriteM    (RegWriteM),
         .RegWriteW    (RegWriteW),
         .PCSrcE       (PCSrcE),
@@ -302,7 +302,7 @@ module riscv_top (
         .RdE          (RdE),
         .Rs1D         (Rs1D),
         .Rs2D         (Rs2D),
-        .ResultSrcE   (ResultSrcE),
+        .ResultSrcE   (ResultSrcE[0]),
         .ForwardAE    (ForwardAE),
         .ForwardBE    (ForwardBE),
         .StallF       (StallF),

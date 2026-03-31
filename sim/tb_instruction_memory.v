@@ -3,8 +3,8 @@
 // DUT       : instruction_memory (src/instruction_memory.v)
 // Coverage  : rstn forces zero output; reads from memfile.hex at known byte
 //             addresses; word-alignment (bits [1:0] ignored); boundary address
-// Notes     : Run from the sim/ directory so $readmemh can find memfile.hex,
-//             or ensure the simulator's working directory is set to sim/.
+// Notes     : Run from the sim/ directory so $readmemh can find memfile.hex.
+//             Memory loaded by testbench via hierarchical reference: uut.mem
 //             memfile.hex word 0 = 32'h00500093  (addi x1, x0, 5)
 //             memfile.hex word 1 = 32'h00300113  (addi x2, x0, 3)
 //             memfile.hex word 2 = 32'h002081B3  (add  x3, x1, x2)
@@ -43,6 +43,12 @@ module tb_instruction_memory;
             end
         end
     endtask
+
+    // -------------------------------------------------------------------------
+    // Load instruction memory
+    // -------------------------------------------------------------------------
+    initial
+        $readmemh("memfile.hex", uut.mem, 0, 1023);
 
     // -------------------------------------------------------------------------
     // Stimulus

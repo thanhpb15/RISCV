@@ -22,7 +22,8 @@
 //   JALR  flush (2 cycles)
 //   Not-taken branch       (no flush, pipeline continues in order)
 //
-// Run from sim/ so $readmemh("memfile2.hex") resolves correctly.
+// Run from sim/ so $readmemh can find memfile2.hex.
+// Instruction memory loaded via: uut.u_if_stage.imem.mem
 // =============================================================================
 `timescale 1ns/1ps
 module tb_riscv_top2;
@@ -41,18 +42,15 @@ module tb_riscv_top2;
     initial clk = 0;
     always #5 clk = ~clk;
 
-    // Override the instruction memory with the comprehensive test program.
-    // The #1 delay (1 ps) ensures this runs after instruction_memory.v's own
-    // initial block (which loads the default memfile.hex at time 0).
-    initial begin
-        #1;
+    // Load instruction memory with the comprehensive test program.
+    initial
         $readmemh("memfile2.hex", uut.u_if_stage.imem.mem, 0, 1023);
-    end
 
     // -------------------------------------------------------------------------
     // Pass / fail counters
     // -------------------------------------------------------------------------
     integer pass = 0, fail = 0;
+    integer i;
 
     task automatic chk_reg;
         input [4:0]  regno;
@@ -79,6 +77,11 @@ module tb_riscv_top2;
         $dumpfile("tb_riscv_top2.vcd");
         $dumpvars(0, tb_riscv_top2);
         $display("=== tb_riscv_top2  (comprehensive RV32I) ===");
+
+        // Zero-initialise GPR array (ASIC: no hardware reset on GPRs;
+        // models software power-on initialisation before program starts)
+        for (i = 0; i < 32; i = i + 1)
+            uut.u_id_stage.rf.registers[i] = 32'h0;
 
         // Assert reset for 3 cycles then release
         rstn = 0;

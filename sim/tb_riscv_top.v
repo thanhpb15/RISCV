@@ -27,7 +27,9 @@
 //
 // Notes:
 //   Run from the sim/ directory so $readmemh can find memfile.hex.
-//   Register file is accessed via hierarchical reference:
+//   Instruction memory loaded via hierarchical reference:
+//     uut.u_if_stage.imem.mem
+//   Register file accessed via hierarchical reference:
 //     uut.u_id_stage.rf.registers[n]
 // =============================================================================
 `timescale 1ns/1ps
@@ -75,12 +77,23 @@ module tb_riscv_top;
     integer i;
 
     // -------------------------------------------------------------------------
+    // Load instruction memory
+    // -------------------------------------------------------------------------
+    initial
+        $readmemh("memfile.hex", uut.u_if_stage.imem.mem, 0, 1023);
+
+    // -------------------------------------------------------------------------
     // Stimulus
     // -------------------------------------------------------------------------
     initial begin
         $dumpfile("tb_riscv_top.vcd");
         $dumpvars(0, tb_riscv_top);
         $display("=== tb_riscv_top ===");
+
+        // Zero-initialise GPR array (ASIC: no hardware reset on GPRs;
+        // models software power-on initialisation before program starts)
+        for (i = 0; i < 32; i = i + 1)
+            uut.u_id_stage.rf.registers[i] = 32'h0;
 
         // Assert reset for 3 cycles
         rstn = 0;
