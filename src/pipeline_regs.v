@@ -149,7 +149,7 @@ endmodule
 // =============================================================================
 // pipeline_EX_MEM
 // Stores: control signals for MEM/WB stages, ALU result, store data,
-//         PC+4 (for JAL/JALR writeback), rd
+//         PC+4 (for JAL/JALR writeback), rd, Funct3 (for sub-word mem ops)
 // No stall / flush needed here (EX/MEM always advances normally)
 // =============================================================================
 module pipeline_EX_MEM (
@@ -159,6 +159,7 @@ module pipeline_EX_MEM (
     input  wire        RegWriteE,
     input  wire        MemWriteE,
     input  wire [1:0]  ResultSrcE,
+    input  wire [2:0]  Funct3E,      // for sub-word load/store decoding in MEM
     // Data
     input  wire [31:0] ALUResultE,
     input  wire [31:0] WriteDataE,   // forwarded rs2 value (for store)
@@ -168,6 +169,7 @@ module pipeline_EX_MEM (
     output reg         RegWriteM,
     output reg         MemWriteM,
     output reg  [1:0]  ResultSrcM,
+    output reg  [2:0]  Funct3M,
     output reg  [31:0] ALUResultM,
     output reg  [31:0] WriteDataM,
     output reg  [31:0] PCPlus4M,
@@ -178,6 +180,7 @@ module pipeline_EX_MEM (
             RegWriteM  <= 1'b0;
             MemWriteM  <= 1'b0;
             ResultSrcM <= 2'b00;
+            Funct3M    <= 3'b000;
             ALUResultM <= 32'h00000000;
             WriteDataM <= 32'h00000000;
             PCPlus4M   <= 32'h00000000;
@@ -186,6 +189,7 @@ module pipeline_EX_MEM (
             RegWriteM  <= RegWriteE;
             MemWriteM  <= MemWriteE;
             ResultSrcM <= ResultSrcE;
+            Funct3M    <= Funct3E;
             ALUResultM <= ALUResultE;
             WriteDataM <= WriteDataE;
             PCPlus4M   <= PCPlus4E;

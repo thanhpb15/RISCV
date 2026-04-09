@@ -8,9 +8,9 @@
 //
 // Supported instructions (RV32I base integer ISA):
 //   R-type  : add, sub, and, or, xor, sll, srl, sra, slt, sltu
-//   I-arith : addi, andi, ori, xori, xori, slli, srli, srai, slti, sltiu
-//   Load    : lw  (word only; byte/halfword requires dmem byte-enable extension)
-//   Store   : sw
+//   I-arith : addi, andi, ori, xori, slli, srli, srai, slti, sltiu
+//   Load    : lb, lbu, lh, lhu, lw
+//   Store   : sb, sh, sw
 //   Branch  : beq, bne, blt, bge, bltu, bgeu
 //   Jump    : jal, jalr
 //   Upper   : lui, auipc
@@ -73,6 +73,7 @@ module riscv_top (
     // EX/MEM register outputs (suffix M = Memory stage)
     wire        RegWriteM, MemWriteM;
     wire [1:0]  ResultSrcM;
+    wire [2:0]  Funct3M;
     wire [31:0] ALUResultM, WriteDataM, PCPlus4M;
     wire [4:0]  RdM;
 
@@ -229,6 +230,7 @@ module riscv_top (
         .RegWriteE    (RegWriteE),
         .MemWriteE    (MemWriteE),
         .ResultSrcE   (ResultSrcE),
+        .Funct3E      (Funct3E),
         .ALUResultE   (ALUResultE),
         .WriteDataE   (WriteDataE),
         .PCPlus4E     (PCPlus4E),
@@ -236,6 +238,7 @@ module riscv_top (
         .RegWriteM    (RegWriteM),
         .MemWriteM    (MemWriteM),
         .ResultSrcM   (ResultSrcM),
+        .Funct3M      (Funct3M),
         .ALUResultM   (ALUResultM),
         .WriteDataM   (WriteDataM),
         .PCPlus4M     (PCPlus4M),
@@ -249,6 +252,7 @@ module riscv_top (
         .clk          (clk),
         .rstn         (rstn),
         .MemWriteM    (MemWriteM),
+        .Funct3M      (Funct3M),
         .ALUResultM   (ALUResultM),
         .WriteDataM   (WriteDataM),
         .ReadDataM    (ReadDataM)
@@ -310,5 +314,4 @@ module riscv_top (
         .FlushE       (FlushE),
         .FlushD       (FlushD)
     );
-
 endmodule
