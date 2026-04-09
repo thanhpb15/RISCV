@@ -12,6 +12,7 @@ module tb_data_memory;
     // DUT signals
     // -------------------------------------------------------------------------
     reg        clk, rstn, write_en;
+    reg [3:0]  byte_en;
     reg [31:0] addr, write_data;
     wire[31:0] read_data;
 
@@ -19,6 +20,7 @@ module tb_data_memory;
         .clk (clk),
         .rstn(rstn),
         .WE  (write_en),
+        .BE  (byte_en),
         .A   (addr),
         .WD  (write_data),
         .RD  (read_data)
@@ -47,13 +49,13 @@ module tb_data_memory;
         end
     endtask
 
-    // Write helper: assert write_en for one cycle then deassert
+    // Write helper: assert write_en for one cycle (all byte lanes enabled) then deassert
     task automatic do_write;
         input [31:0] a, d;
         begin
-            addr = a; write_data = d; write_en = 1;
+            addr = a; write_data = d; write_en = 1; byte_en = 4'b1111;
             @(posedge clk); #1;
-            write_en = 0;
+            write_en = 0; byte_en = 4'b0000;
         end
     endtask
 
@@ -65,16 +67,16 @@ module tb_data_memory;
         $dumpvars(0, tb_data_memory);
         $display("=== tb_data_memory ===");
 
-        rstn = 0; write_en = 0; addr = 32'h0; write_data = 32'h0;
+        rstn = 0; write_en = 0; byte_en = 4'b0000; addr = 32'h0; write_data = 32'h0;
 
         // Reset active: read returns 0
         #3;
         chk(read_data, 32'h0, "rstn=0: forced 0");
 
         // Write during reset must not cause trouble (not stored)
-        write_en = 1; addr = 32'h0; write_data = 32'hDEADBEEF;
+        write_en = 1; byte_en = 4'b1111; addr = 32'h0; write_data = 32'hDEADBEEF;
         @(posedge clk); #1;
-        write_en = 0;
+        write_en = 0; byte_en = 4'b0000;
 
         // Deassert reset
         @(negedge clk); rstn = 1;
@@ -134,5 +136,4 @@ module tb_data_memory;
         $display("--- data_memory: %0d passed, %0d failed ---", pass, fail);
         $finish;
     end
-
 endmodule

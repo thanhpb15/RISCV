@@ -44,7 +44,7 @@ endef
 ALL_TARGETS := adder mux pc wb_stage alu imm_extend alu_decoder main_decoder \
                control_unit register_file instruction_memory data_memory \
                hazard_unit pipeline_regs if_stage id_stage ex_stage \
-               mem_stage riscv_top riscv_top2
+               mem_stage riscv_top riscv_top2 riscv_top3
 
 .PHONY: all clean $(ALL_TARGETS)
 
@@ -200,6 +200,29 @@ riscv_top:
 riscv_top2:
 	$(call run_sim,tb_riscv_top2,\
 		$(SIM)/tb_riscv_top2.v \
+		$(SRC)/riscv_top.v \
+		$(SRC)/if_stage.v \
+		$(SRC)/id_stage.v \
+		$(SRC)/ex_stage.v \
+		$(SRC)/mem_stage.v \
+		$(SRC)/wb_stage.v \
+		$(SRC)/pipeline_regs.v \
+		$(SRC)/hazard_unit.v \
+		$(SRC)/pc.v \
+		$(SRC)/adder.v \
+		$(SRC)/mux.v \
+		$(SRC)/alu.v \
+		$(SRC)/alu_decoder.v \
+		$(SRC)/main_decoder.v \
+		$(SRC)/control_unit.v \
+		$(SRC)/imm_extend.v \
+		$(SRC)/register_file.v \
+		$(SRC)/instruction_memory.v \
+		$(SRC)/data_memory.v)
+
+riscv_top3:
+	$(call run_sim,tb_riscv_top3,\
+		$(SIM)/tb_riscv_top3.v \
 		$(SRC)/riscv_top.v \
 		$(SRC)/if_stage.v \
 		$(SRC)/id_stage.v \
